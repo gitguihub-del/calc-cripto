@@ -75,6 +75,35 @@
   }
   .btn-clear:hover { background: #475569; }
 
+  /* Ecrã de Login / Registo */
+  #authOverlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    padding: 16px;
+  }
+  .auth-box {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  }
+  .auth-box h2 { color: #f8fafc; font-size: 20px; margin-bottom: 8px; }
+  .auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+  .auth-box input { margin-bottom: 14px; text-align: center; font-size: 16px; letter-spacing: 1px; }
+  .auth-box button { width: 100%; padding: 12px; font-size: 15px; background: #0ea5e9; color: #fff; margin-top: 6px; }
+  .auth-box button:hover { background: #0284c7; }
+  .user-badge-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #1e293b; padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; font-size: 13px; color: #94a3b8; }
+  .user-badge-top span { color: #38bdf8; font-weight: 600; }
+
   /* Cards de ativos */
   .ativo-card {
     background: #0f172a;
@@ -175,6 +204,25 @@
 </head>
 <body>
 
+<!-- ECRÃ DE LOGIN / REGISTO -->
+<div id="authOverlay">
+  <div class="auth-box">
+    <h2 id="authTitle">🔒 Configurar Acesso</h2>
+    <p id="authSubtitle">Crie o seu nome de utilizador e um PIN de 4 dígitos.</p>
+    <div style="text-align: left;"><label>Nome de Utilizador</label></div>
+    <input type="text" id="authNome" placeholder="Ex: Guilherme" maxlength="20">
+    <div style="text-align: left;"><label>PIN de 4 Dígitos</label></div>
+    <input type="password" id="authPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+    <button onclick="realizarAutenticacao()" id="authBtn">Criar e Entrar</button>
+  </div>
+</div>
+
+<!-- CABEÇALHO DO UTILIZADOR LOGADO -->
+<div class="user-badge-top" id="userBadgeTop" style="display:none;">
+  <div>Utilizador: <span id="spanUsuarioLogado"></span></div>
+  <button class="btn-clear" style="margin:0; padding:4px 10px; font-size:11px;" onclick="terminarSessao()">Bloquear / Sair</button>
+</div>
+
 <h1>🧮 Preço Médio — Múltiplas Criptos</h1>
 <div class="sub">Registre compras por ativo. Tudo é salvo automaticamente no seu navegador.</div>
 
@@ -229,8 +277,72 @@
 
 <script>
   const STORAGE_KEY = 'calculadora_cripto_v1';
+  const AUTH_KEY = 'calculadora_cripto_auth_v1';
 
   let dados = carregar();
+  verificarAutenticacaoInicial();
+
+  function verificarAutenticacaoInicial() {
+    const salvo = localStorage.getItem(AUTH_KEY);
+    const overlay = document.getElementById('authOverlay');
+    const badge = document.getElementById('userBadgeTop');
+    
+    if (salvo) {
+      const creds = JSON.parse(salvo);
+      document.getElementById('authTitle').textContent = `Bem-vindo, ${creds.nome}!`;
+      document.getElementById('authSubtitle').textContent = 'Introduza o seu PIN de 4 dígitos para entrar.';
+      document.getElementById('authNome').style.display = 'none';
+      document.getElementById('authBtn').textContent = 'Entrar';
+      document.getElementById('authPin').value = '';
+      document.getElementById('authPin').focus();
+    } else {
+      document.getElementById('authTitle').textContent = '🔒 Configurar Acesso';
+      document.getElementById('authSubtitle').textContent = 'Crie o seu nome de utilizador e um PIN de 4 dígitos.';
+      document.getElementById('authNome').style.display = 'block';
+      document.getElementById('authBtn').textContent = 'Criar e Entrar';
+    }
+  }
+
+  function realizarAutenticacao() {
+    const salvo = localStorage.getItem(AUTH_KEY);
+    const pinInput = document.getElementById('authPin').value.trim();
+
+    if (!salvo) {
+      // Registo inicial
+      const nomeInput = document.getElementById('authNome').value.trim();
+      if (!nomeInput) { alert('Por favor, digite um nome de utilizador.'); return; }
+      if (pinInput.length !== 4 || isNaN(pinInput)) { alert('O PIN deve conter exatamente 4 dígitos numéricos.'); return; }
+
+      const novasCreds = { nome: nomeInput, pin: pinInput };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(novasCreds));
+      entrarApp(nomeInput);
+    } else {
+      // Login com PIN existente
+      const creds = JSON.parse(salvo);
+      if (pinInput === creds.pin) {
+        entrarApp(creds.nome);
+      } else {
+        alert('PIN incorreto. Tente novamente.');
+        document.getElementById('authPin').value = '';
+        document.getElementById('authPin').focus();
+      }
+    }
+  }
+
+  function entrarApp(nome) {
+    document.getElementById('authOverlay').style.display = 'none';
+    const badge = document.getElementById('userBadgeTop');
+    badge.style.display = 'flex';
+    document.getElementById('spanUsuarioLogado').textContent = nome;
+    render();
+  }
+
+  function terminarSessao() {
+    document.getElementById('authPin').value = '';
+    verificarAutenticacaoInicial();
+    document.getElementById('authOverlay').style.display = 'flex';
+    document.getElementById('userBadgeTop').style.display = 'none';
+  }
 
   function carregar() {
     try {
@@ -266,7 +378,7 @@
 
     if (!ativo) { alert('Selecione ou crie um ativo.'); return; }
     if (!valor || valor <= 0 || !preco || preco <= 0) {
-      alert('Preencha valor investido e preço unitário com valores maiores que zero.');
+      alert('Preencha o valor investido e o preço unitário com valores maiores que zero.');
       return;
     }
 
@@ -295,14 +407,14 @@
   }
 
   function removerAtivo(ativo) {
-    if (!confirm(`Apagar TODAS as compras de ${ativo}?`)) return;
+    if (!confirm(`Deseja apagar TODAS as compras de ${ativo}?`)) return;
     delete dados.ativos[ativo];
     salvar();
     render();
   }
 
   function limparTudo() {
-    if (!confirm('Apagar TODOS os registros de TODOS os ativos? Essa ação não pode ser desfeita.')) return;
+    if (!confirm('Deseja apagar TODOS os registros de TODOS os ativos? Esta ação não pode ser desfeita.')) return;
     dados = { ativos: {} };
     salvar();
     render();
@@ -472,6 +584,11 @@
     }
   }
 
+  // Atalho de Enter no PIN
+  document.getElementById('authPin').addEventListener('keydown', e => {
+    if (e.key === 'Enter') realizarAutenticacao();
+  });
+
   // Registrar o Service Worker para PWA
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -487,14 +604,12 @@
     });
   });
   document.getElementById('novoAtivo').addEventListener('keydown', e => {
-    if (e.key === 'Enter') criarAtivo();
+    e.key === 'Enter' && criarAtivo();
   });
 
   document.getElementById('novoAtivo').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   });
-
-  render();
 </script>
 </body>
 </html>
