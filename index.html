@@ -291,23 +291,16 @@
   let dados = carregarComMigracao();
   verificarAutenticacaoInicial();
 
-  // Função que faz a migração automática dos dados da v1 para a v2
   function carregarComMigracao() {
     try {
-      // Tenta carregar da chave v2 atual
       const rawV2 = localStorage.getItem(STORAGE_KEY_V2);
-      if (rawV2) {
-        return JSON.parse(rawV2);
-      }
+      if (rawV2) return JSON.parse(rawV2);
 
-      // Se não existir v2, procura na chave antiga v1
       const rawV1 = localStorage.getItem(STORAGE_KEY_V1);
       if (rawV1) {
         const dadosV1 = JSON.parse(rawV1);
         if (dadosV1 && dadosV1.ativos) {
-          // Migra automaticamente para a v2
           localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(dadosV1));
-          console.log('Dados migrados com sucesso da versão v1 para v2!');
           return dadosV1;
         }
       }
@@ -377,7 +370,6 @@
     localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(dados));
   }
 
-  // --- FUNÇÕES DE EXPORTAR E IMPORTAR DADOS ---
   function exportarDados() {
     const payload = {
       versao: 1,
@@ -484,7 +476,7 @@
     render();
   }
 
-  // BUSCA AUTOMÁTICA DE COTAÇÕES VIA COINGECKO API
+  // BUSCA ROBUSTA DE COTAÇÕES (COM SUPORTE ESPECIAL PARA SOLANA E OUTRAS)
   async function atualizarTodasCotações() {
     const ativos = Object.keys(dados.ativos);
     if (ativos.length === 0) {
@@ -492,10 +484,11 @@
       return;
     }
 
-    const idsComuns = {
+    // Mapeamento direto garantido para a CoinGecko API
+    const idsGarantidos = {
+      'SOL': 'solana',
       'BTC': 'bitcoin',
       'ETH': 'ethereum',
-      'SOL': 'solana',
       'ADA': 'cardano',
       'DOGE': 'dogecoin',
       'XRP': 'ripple',
@@ -505,17 +498,15 @@
       'UNI': 'uniswap',
       'LTC': 'litecoin',
       'AVAX': 'avalanche-2',
-      'SHIB': 'shiba-inu'
+      'SHIB': 'shiba-inu',
+      'BNB': 'binancecoin'
     };
 
     let idsParaBuscar = [];
     let mapaReverso = {};
 
     ativos.forEach(simb => {
-      let id = idsComuns[simb];
-      if (!id) {
-        id = simb.toLowerCase();
-      }
+      let id = idsGarantidos[simb] || simb.toLowerCase();
       idsParaBuscar.push(id);
       mapaReverso[id] = simb;
     });
@@ -539,7 +530,7 @@
       if (atualizados > 0) {
         alert(`Sucesso! Cotações de ${atualizados} ativo(s) atualizadas para BRL.`);
       } else {
-        alert('Não foi possível encontrar cotações automáticas para os ativos informados.');
+        alert('Não foi possível atualizar automaticamente. Verifique se os símbolos estão corretos ou atualize manualmente.');
       }
     } catch (e) {
       console.error(e);
