@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora de Preço Médio - Múltiplas Criptos</title>
+<title>Calculadora de Preço Médio - Múltiplas Criptos (GitHub OAuth)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
+<!-- Supabase JS Client CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   body {
@@ -75,7 +77,7 @@
   }
   .btn-clear:hover { background: #475569; }
 
-  /* Ecrã de Login / PIN */
+  /* Ecrã de Login via GitHub */
   #authOverlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -90,18 +92,33 @@
     background: #1e293b;
     border: 1px solid #334155;
     border-radius: 16px;
-    padding: 28px;
+    padding: 32px 28px;
     width: 100%;
     max-width: 380px;
     text-align: center;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   }
   .auth-box h2 { color: #f8fafc; font-size: 20px; margin-bottom: 8px; }
-  .auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
-  .auth-box input { margin-bottom: 14px; text-align: center; font-size: 16px; letter-spacing: 1px; }
-  .auth-box button { width: 100%; padding: 12px; font-size: 15px; background: #0ea5e9; color: #fff; margin-top: 6px; }
-  .auth-box button:hover { background: #0284c7; }
+  .auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 24px; line-height: 1.5; }
   
+  .btn-github {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    background: #24292e;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 1px solid #444c56;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-github:hover { background: #2f363d; }
+
   .user-badge-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #1e293b; padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; font-size: 13px; color: #94a3b8; flex-wrap: wrap; gap: 10px;}
   .user-badge-top span { color: #38bdf8; font-weight: 600; }
 
@@ -205,34 +222,30 @@
 </head>
 <body>
 
-<!-- ECRÃ DE LOGIN / PIN -->
+<!-- ECRÃ DE LOGIN VIA GITHUB -->
 <div id="authOverlay">
   <div class="auth-box">
-    <h2 id="authTitle">🔒 Configurar Acesso</h2>
-    <p id="authSubtitle">Crie o seu nome de utilizador e um PIN de 4 dígitos.</p>
-    <div style="text-align: left;"><label>Nome de Utilizador</label></div>
-    <input type="text" id="authNome" placeholder="Ex: Guilherme" maxlength="20">
-    <div style="text-align: left;"><label>PIN de 4 Dígitos</label></div>
-    <input type="password" id="authPin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
-    <button onclick="realizarAutenticacao()" id="authBtn">Criar e Entrar</button>
+    <h2>🔐 Autenticação Segura</h2>
+    <p>Aceda com a sua conta do GitHub para gerenciar a sua carteira na nuvem.</p>
+    <button class="btn-github" onclick="loginComGithub()">
+      <svg height="20" width="20" viewBox="0 0 16 16" fill="white"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
+      Entrar com o GitHub
+    </button>
   </div>
 </div>
 
-<!-- CABEÇALHO DO UTILIZADOR COM FERRAMENTAS -->
+<!-- CABEÇALHO DO UTILIZADOR -->
 <div class="user-badge-top" id="userBadgeTop" style="display:none;">
-  <div>Utilizador: <span id="spanUsuarioLogado"></span></div>
+  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ GitHub Auth)</span></div>
   <div style="display:flex; gap:6px; flex-wrap:wrap;">
-    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="atualizarTodasCotações()">🔄 Cotações</button>
-    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#334155; color:#fff;" onclick="exportarDados()">📤 Exportar</button>
-    <label class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#334155; color:#fff; cursor:pointer; display:inline-block;">
-      📥 Importar <input type="file" id="fileImport" accept=".json" style="display:none;" onchange="importarDados(event)">
-    </label>
+    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="sincronizarDaNuvem()">🔄 Sincronizar</button>
+    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="atualizarTodasCotações()">📈 Cotações</button>
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px;" onclick="terminarSessao()">Sair</button>
   </div>
 </div>
 
 <h1>🧮 Preço Médio — Múltiplas Criptos</h1>
-<div class="sub">Registre compras por ativo. Tudo é salvo automaticamente no seu navegador.</div>
+<div class="sub">Gestão de carteira sincronizada na nuvem com autenticação do GitHub.</div>
 
 <!-- TOTAL GERAL -->
 <div class="topo-total">
@@ -272,8 +285,6 @@
     </div>
     <button class="btn-add" onclick="criarAtivo()">+ Criar ativo</button>
   </div>
-
-  <div class="hint">Pressione <b>Enter</b> nos campos de valor/preço para adicionar. O símbolo do ativo é salvo em maiúsculas.</div>
 </div>
 
 <!-- LISTA DE ATIVOS -->
@@ -284,136 +295,100 @@
 <button class="btn-clear" onclick="limparTudo()" style="width:100%; padding:12px;">🗑️ Apagar TODOS os registros</button>
 
 <script>
-  const STORAGE_KEY_V2 = 'calculadora_cripto_v2';
-  const STORAGE_KEY_V1 = 'calculadora_cripto_v1';
-  const AUTH_KEY = 'calculadora_cripto_auth_v1';
+  const SUPABASE_URL = "https://grwnxlrbjozxcqwbbqur.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_1Qlm4itIDtni1X5TFaOBlQ_ch5qfSA3";
 
-  let dados = carregarComMigracao();
-  verificarAutenticacaoInicial();
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  function carregarComMigracao() {
-    try {
-      const rawV2 = localStorage.getItem(STORAGE_KEY_V2);
-      if (rawV2) return JSON.parse(rawV2);
+  let currentUser = null;
+  let dados = { ativos: {} };
 
-      const rawV1 = localStorage.getItem(STORAGE_KEY_V1);
-      if (rawV1) {
-        const dadosV1 = JSON.parse(rawV1);
-        if (dadosV1 && dadosV1.ativos) {
-          localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(dadosV1));
-          return dadosV1;
-        }
+  // Verifica estado de autenticação ao carregar a página
+  window.addEventListener('DOMContentLoaded', async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      processarSessao(session.user);
+    }
+
+    // Escuta alterações de autenticação (ex: callback do OAuth)
+    supabaseClient.auth.onAuthStateChange(async (event, session) => {
+      if (session && session.user) {
+        processarSessao(session.user);
       }
-    } catch (e) {
-      console.warn('Erro ao migrar dados:', e);
-    }
-    return { ativos: {} };
-  }
+    });
+  });
 
-  function verificarAutenticacaoInicial() {
-    const salvo = localStorage.getItem(AUTH_KEY);
-    if (salvo) {
-      const creds = JSON.parse(salvo);
-      document.getElementById('authTitle').textContent = `Bem-vindo, ${creds.nome}!`;
-      document.getElementById('authSubtitle').textContent = 'Introduza o seu PIN de 4 dígitos para entrar.';
-      document.getElementById('authNome').style.display = 'none';
-      document.getElementById('authBtn').textContent = 'Entrar';
-      document.getElementById('authPin').value = '';
-      document.getElementById('authPin').focus();
-    } else {
-      document.getElementById('authTitle').textContent = '🔒 Configurar Acesso';
-      document.getElementById('authSubtitle').textContent = 'Crie o seu nome de utilizador e um PIN de 4 dígitos.';
-      document.getElementById('authNome').style.display = 'block';
-      document.getElementById('authBtn').textContent = 'Criar e Entrar';
-    }
-  }
-
-  function realizarAutenticacao() {
-    const salvo = localStorage.getItem(AUTH_KEY);
-    const pinInput = document.getElementById('authPin').value.trim();
-
-    if (!salvo) {
-      const nomeInput = document.getElementById('authNome').value.trim();
-      if (!nomeInput) { alert('Por favor, digite um nome de utilizador.'); return; }
-      if (pinInput.length !== 4 || isNaN(pinInput)) { alert('O PIN deve conter exatamente 4 dígitos numéricos.'); return; }
-
-      const novasCreds = { nome: nomeInput, pin: pinInput };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(novasCreds));
-      entrarApp(nomeInput);
-    } else {
-      const creds = JSON.parse(salvo);
-      if (pinInput === creds.pin) {
-        entrarApp(creds.nome);
-      } else {
-        alert('PIN incorreto. Tente novamente.');
-        document.getElementById('authPin').value = '';
-        document.getElementById('authPin').focus();
+  async function loginComGithub() {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
       }
+    });
+    if (error) {
+      alert('Erro ao autenticar com o GitHub: ' + error.message);
     }
   }
 
-  function entrarApp(nome) {
+  async function processarSessao(user) {
+    currentUser = user;
+    const nomeExibicao = user.user_metadata?.user_name || user.email || 'Utilizador';
+    
     document.getElementById('authOverlay').style.display = 'none';
     document.getElementById('userBadgeTop').style.display = 'flex';
-    document.getElementById('spanUsuarioLogado').textContent = nome;
-    render();
+    document.getElementById('spanUsuarioLogado').textContent = nomeExibicao;
+
+    await sincronizarDaNuvem();
   }
 
-  function terminarSessao() {
-    document.getElementById('authPin').value = '';
-    verificarAutenticacaoInicial();
+  async function terminarSessao() {
+    await supabaseClient.auth.signOut();
+    currentUser = null;
     document.getElementById('authOverlay').style.display = 'flex';
     document.getElementById('userBadgeTop').style.display = 'none';
   }
 
-  function salvar() {
-    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(dados));
-  }
+  async function sincronizarDaNuvem() {
+    if (!currentUser) return;
+    try {
+      const { data, error } = await supabaseClient
+        .from('carteiras_cripto_oauth')
+        .select('dados')
+        .eq('user_id', currentUser.id)
+        .single();
 
-  function exportarDados() {
-    const payload = {
-      versao: 1,
-      dataExportacao: new Date().toISOString(),
-      dados: dados
-    };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", "backup_carteira_cripto.json");
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  }
-
-  function importarDados(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      try {
-        const conteudo = JSON.parse(e.target.result);
-        if (conteudo && conteudo.dados && conteudo.dados.ativos) {
-          if (confirm('Deseja substituir os dados atuais pelos dados importados?')) {
-            dados = conteudo.dados;
-            salvar();
-            render();
-            alert('Dados importados com sucesso!');
-          }
-        } else {
-          alert('Ficheiro de backup inválido.');
-        }
-      } catch (err) {
-        alert('Erro ao ler o ficheiro JSON.');
-        console.error(err);
+      if (data && data.dados) {
+        dados = data.dados;
+      } else {
+        dados = { ativos: {} };
+        await salvarNaNuvem();
       }
-      event.target.value = '';
-    };
-    reader.readAsText(file);
+      render();
+    } catch (e) {
+      console.warn('Criando registo inicial para o novo utilizador...');
+      dados = { ativos: {} };
+      await salvarNaNuvem();
+      render();
+    }
   }
 
-  const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const fmtQtd = v => v.toLocaleString('pt-BR', { maximumFractionDigits: 8 });
+  async function salvarNaNuvem() {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabaseClient
+        .from('carteiras_cripto_oauth')
+        .upsert({
+          user_id: currentUser.id,
+          email: currentUser.email || '',
+          dados: dados,
+          atualizado_em: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) console.error('Erro ao salvar na nuvem:', error);
+    } catch (e) {
+      console.error('Erro de rede:', e);
+    }
+  }
 
   function criarAtivo() {
     const input = document.getElementById('novoAtivo');
@@ -422,7 +397,7 @@
     if (dados.ativos[nome]) { alert('Esse ativo já existe.'); return; }
     dados.ativos[nome] = { compras: [], precoAtual: 0 };
     input.value = '';
-    salvar();
+    salvarNaNuvem();
     render();
     document.getElementById('ativoSelect').value = nome;
   }
@@ -434,7 +409,7 @@
 
     if (!ativo) { alert('Selecione ou crie um ativo.'); return; }
     if (!valor || valor <= 0 || !preco || preco <= 0) {
-      alert('Preencha o valor investido e o preço unitário com valores maiores que zero.');
+      alert('Preencha valores maiores que zero.');
       return;
     }
 
@@ -442,7 +417,7 @@
     document.getElementById('valor').value = '';
     document.getElementById('preco').value = '';
     document.getElementById('valor').focus();
-    salvar();
+    salvarNaNuvem();
     render();
   }
 
@@ -451,55 +426,41 @@
     if (dados.ativos[ativo].compras.length === 0) {
       delete dados.ativos[ativo];
     }
-    salvar();
+    salvarNaNuvem();
     render();
   }
 
   function atualizarPrecoAtual(ativo, valor) {
     const v = parseFloat(valor);
     dados.ativos[ativo].precoAtual = (v && v > 0) ? v : 0;
-    salvar();
+    salvarNaNuvem();
     render();
   }
 
   function removerAtivo(ativo) {
     if (!confirm(`Deseja apagar TODAS as compras de ${ativo}?`)) return;
     delete dados.ativos[ativo];
-    salvar();
+    salvarNaNuvem();
     render();
   }
 
   function limparTudo() {
-    if (!confirm('Deseja apagar TODOS os registros de TODOS os ativos? Esta ação não pode ser desfeita.')) return;
+    if (!confirm('Deseja apagar TODOS os registros? Esta ação não pode ser desfeita.')) return;
     dados = { ativos: {} };
-    salvar();
+    salvarNaNuvem();
     render();
   }
 
-  // BUSCA ROBUSTA DE COTAÇÕES (COM SUPORTE ESPECIAL PARA SOLANA E OUTRAS)
   async function atualizarTodasCotações() {
     const ativos = Object.keys(dados.ativos);
-    if (ativos.length === 0) {
-      alert('Nenhum ativo cadastrado para atualizar.');
-      return;
-    }
+    if (ativos.length === 0) { alert('Nenhum ativo cadastrado.'); return; }
 
-    // Mapeamento direto garantido para a CoinGecko API
     const idsGarantidos = {
-      'SOL': 'solana',
-      'BTC': 'bitcoin',
-      'ETH': 'ethereum',
-      'ADA': 'cardano',
-      'DOGE': 'dogecoin',
-      'XRP': 'ripple',
-      'DOT': 'polkadot',
-      'MATIC': 'polygon',
-      'LINK': 'chainlink',
-      'UNI': 'uniswap',
-      'LTC': 'litecoin',
-      'AVAX': 'avalanche-2',
-      'SHIB': 'shiba-inu',
-      'BNB': 'binancecoin'
+      'SOL': 'solana', 'BTC': 'bitcoin', 'ETH': 'ethereum',
+      'ADA': 'cardano', 'DOGE': 'dogecoin', 'XRP': 'ripple',
+      'DOT': 'polkadot', 'MATIC': 'polygon', 'LINK': 'chainlink',
+      'UNI': 'uniswap', 'LTC': 'litecoin', 'AVAX': 'avalanche-2',
+      'SHIB': 'shiba-inu', 'BNB': 'binancecoin'
     };
 
     let idsParaBuscar = [];
@@ -525,16 +486,11 @@
         }
       }
 
-      salvar();
+      salvarNaNuvem();
       render();
-      if (atualizados > 0) {
-        alert(`Sucesso! Cotações de ${atualizados} ativo(s) atualizadas para BRL.`);
-      } else {
-        alert('Não foi possível atualizar automaticamente. Verifique se os símbolos estão corretos ou atualize manualmente.');
-      }
+      alert(`Sucesso! Cotações de ${atualizados} ativo(s) atualizadas e sincronizadas na nuvem.`);
     } catch (e) {
-      console.error(e);
-      alert('Erro ao conectar com a API de cotações. Verifique sua conexão com a internet.');
+      alert('Erro ao conectar com a API de cotações.');
     }
   }
 
@@ -551,7 +507,6 @@
     const valorAtual = precoAtual > 0 ? totalQtd * precoAtual : 0;
     const pnl = precoAtual > 0 ? valorAtual - totalInvestido : 0;
     const pnlPct = (precoAtual > 0 && totalInvestido > 0) ? (pnl / totalInvestido) * 100 : 0;
-
     return { totalInvestido, totalQtd, precoMedio, precoAtual, valorAtual, pnl, pnlPct };
   }
 
@@ -578,16 +533,14 @@
 
   function render() {
     renderSelect();
-
     const container = document.getElementById('listaAtivos');
     const vazio = document.getElementById('vazioGeral');
     container.innerHTML = '';
 
     const ativos = Object.keys(dados.ativos).sort();
-
     if (ativos.length === 0) {
       vazio.style.display = 'block';
-      document.getElementById('totalGeral').textContent = fmtBRL(0);
+      document.getElementById('totalGeral').textContent = 'R$ 0,00';
       document.getElementById('valorGeral').textContent = '—';
       document.getElementById('valorGeral').className = 'val neutral';
       return;
@@ -611,7 +564,7 @@
 
       const pnlCls = r.pnl >= 0 ? 'pos' : 'neg';
       const pnlTxt = r.precoAtual > 0
-        ? (r.pnl >= 0 ? '+' : '') + fmtBRL(r.pnl) + ` (${r.pnlPct >= 0 ? '+' : ''}${r.pnlPct.toFixed(2)}%)`
+        ? (r.pnl >= 0 ? '+' : '') + r.pnl.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ` (${r.pnlPct >= 0 ? '+' : ''}${r.pnlPct.toFixed(2)}%)`
         : '—';
 
       let linhas = '';
@@ -620,80 +573,39 @@
         linhas += `
           <tr>
             <td>${i + 1}</td>
-            <td>${fmtBRL(c.valor)}</td>
-            <td>${fmtBRL(c.preco)}</td>
-            <td>${fmtQtd(qtd)}</td>
+            <td>${c.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            <td>${c.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+            <td>${qtd.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}</td>
             <td><button class="btn-del" onclick="removerCompra('${ativo}', ${i})">✕</button></td>
           </tr>`;
       });
 
       card.innerHTML = `
         <div class="ativo-header">
-          <div class="ativo-nome">
-            🪙 ${ativo}
-            <span class="ativo-badge">${dados.ativos[ativo].compras.length} compra(s)</span>
-          </div>
+          <div class="ativo-nome">🪙 ${ativo} <span class="ativo-badge">${dados.ativos[ativo].compras.length} compra(s)</span></div>
           <button class="btn-clear" style="margin:0;" onclick="removerAtivo('${ativo}')">Apagar ativo</button>
         </div>
-
         <div class="resumo">
-          <div class="resumo-box">
-            <div class="lbl">Total investido</div>
-            <div class="val neutral">${fmtBRL(r.totalInvestido)}</div>
-          </div>
-          <div class="resumo-box">
-            <div class="lbl">Quantidade</div>
-            <div class="val neutral">${fmtQtd(r.totalQtd)}</div>
-          </div>
-          <div class="resumo-box">
-            <div class="lbl">Preço médio</div>
-            <div class="val neutral">${fmtBRL(r.precoMedio)}</div>
-          </div>
-          <div class="resumo-box">
-            <div class="lbl">Preço atual (R$)</div>
-            <input type="number" class="preco-atual-input"
-                   value="${r.precoAtual || ''}"
-                   placeholder="0.00"
-                   step="0.00000001"
-                   onchange="atualizarPrecoAtual('${ativo}', this.value)">
-          </div>
+          <div class="resumo-box"><div class="lbl">Total investido</div><div class="val neutral">${r.totalInvestido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div></div>
+          <div class="resumo-box"><div class="lbl">Quantidade</div><div class="val neutral">${r.totalQtd.toLocaleString('pt-BR', { maximumFractionDigits: 8 })}</div></div>
+          <div class="resumo-box"><div class="lbl">Preço médio</div><div class="val neutral">${r.precoMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div></div>
+          <div class="resumo-box"><div class="lbl">Preço atual (R$)</div><input type="number" class="preco-atual-input" value="${r.precoAtual || ''}" placeholder="0.00" step="0.00000001" onchange="atualizarPrecoAtual('${ativo}', this.value)"></div>
         </div>
-
         <div class="resumo" style="grid-template-columns: 1fr 1fr;">
-          <div class="resumo-box">
-            <div class="lbl">Valor atual da posição</div>
-            <div class="val neutral">${r.precoAtual > 0 ? fmtBRL(r.valorAtual) : '—'}</div>
-          </div>
-          <div class="resumo-box">
-            <div class="lbl">Lucro / Prejuízo</div>
-            <div class="val ${r.precoAtual > 0 ? pnlCls : 'neutral'}">${pnlTxt}</div>
-          </div>
+          <div class="resumo-box"><div class="lbl">Valor atual da posição</div><div class="val neutral">${r.precoAtual > 0 ? r.valorAtual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</div></div>
+          <div class="resumo-box"><div class="lbl">Lucro / Prejuízo</div><div class="val ${r.precoAtual > 0 ? pnlCls : 'neutral'}">${pnlTxt}</div></div>
         </div>
-
         <div style="overflow-x:auto; margin-top:14px;">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Valor (R$)</th>
-                <th>Preço (R$)</th>
-                <th>Qtd.</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>${linhas}</tbody>
-          </table>
+          <table><thead><tr><th>#</th><th>Valor (R$)</th><th>Preço (R$)</th><th>Qtd.</th><th></th></tr></thead><tbody>${linhas}</tbody></table>
         </div>
       `;
-
       container.appendChild(card);
     });
 
-    document.getElementById('totalGeral').textContent = fmtBRL(somaTotalInvestido);
-
+    document.getElementById('totalGeral').textContent = somaTotalInvestido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const elValorGeral = document.getElementById('valorGeral');
     if (temPrecoAtualAlgum) {
-      elValorGeral.textContent = fmtBRL(somaValorAtual);
+      elValorGeral.textContent = somaValorAtual.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const pnlGeral = somaValorAtual - somaTotalInvestido;
       elValorGeral.className = 'val ' + (pnlGeral >= 0 ? 'pos' : 'neg');
     } else {
@@ -702,26 +614,10 @@
     }
   }
 
-  document.getElementById('authPin').addEventListener('keydown', e => {
-    if (e.key === 'Enter') realizarAutenticacao();
-  });
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .catch(err => console.log('Service Worker:', err));
-    });
-  }
-
   ['valor', 'preco'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') adicionar();
-    });
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') adicionar(); });
   });
-  document.getElementById('novoAtivo').addEventListener('keydown', e => {
-    if (e.key === 'Enter') criarAtivo();
-  });
-
+  document.getElementById('novoAtivo').addEventListener('keydown', e => { if (e.key === 'Enter') criarAtivo(); });
   document.getElementById('novoAtivo').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   });
