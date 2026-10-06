@@ -303,14 +303,12 @@
   let currentUser = null;
   let dados = { ativos: {} };
 
-  // Verifica estado de autenticação ao carregar a página
   window.addEventListener('DOMContentLoaded', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (session && session.user) {
       processarSessao(session.user);
     }
 
-    // Escuta alterações de autenticação (ex: callback do OAuth)
     supabaseClient.auth.onAuthStateChange(async (event, session) => {
       if (session && session.user) {
         processarSessao(session.user);
