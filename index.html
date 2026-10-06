@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora de Preço Médio - Múltiplas Criptos (GitHub OAuth)</title>
+<title>Calculadora de Preço Médio - Múltiplas Criptos (PIN Supabase)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
 <!-- Supabase JS Client CDN -->
@@ -77,7 +77,7 @@
   }
   .btn-clear:hover { background: #475569; }
 
-  /* Ecrã de Login via GitHub */
+  /* Ecrã de Login por PIN */
   #authOverlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -99,25 +99,8 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
   }
   .auth-box h2 { color: #f8fafc; font-size: 20px; margin-bottom: 8px; }
-  .auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 24px; line-height: 1.5; }
-  
-  .btn-github {
-    width: 100%;
-    padding: 12px 16px;
-    font-size: 15px;
-    background: #24292e;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    border-radius: 8px;
-    font-weight: 600;
-    border: 1px solid #444c56;
-    cursor: pointer;
-    transition: 0.2s;
-  }
-  .btn-github:hover { background: #2f363d; }
+  .auth-box p { color: #94a3b8; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
+  .auth-box input { margin-bottom: 12px; text-align: center; font-size: 16px; }
 
   .user-badge-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; background: #1e293b; padding: 10px 16px; border-radius: 8px; border: 1px solid #334155; font-size: 13px; color: #94a3b8; flex-wrap: wrap; gap: 10px;}
   .user-badge-top span { color: #38bdf8; font-weight: 600; }
@@ -211,8 +194,6 @@
     font-size: 14px;
   }
 
-  .hint { font-size: 12px; color: #64748b; margin-top: 8px; line-height: 1.5; }
-
   @media (max-width: 640px) {
     .grid-add { grid-template-columns: 1fr 1fr; }
     .resumo { grid-template-columns: 1fr 1fr; }
@@ -222,21 +203,20 @@
 </head>
 <body>
 
-<!-- ECRÃ DE LOGIN VIA GITHUB -->
+<!-- ECRÃ DE LOGIN POR PIN -->
 <div id="authOverlay">
   <div class="auth-box">
-    <h2>🔐 Autenticação Segura</h2>
-    <p>Aceda com a sua conta do GitHub para gerenciar a sua carteira na nuvem.</p>
-    <button class="btn-github" onclick="loginComGithub()">
-      <svg height="20" width="20" viewBox="0 0 16 16" fill="white"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.22 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path></svg>
-      Entrar com o GitHub
-    </button>
+    <h2>🔐 Acesso Seguro</h2>
+    <p>Insira o seu nome de utilizador e PIN para aceder aos dados na nuvem.</p>
+    <input type="text" id="inputUsuario" placeholder="Seu Nome / Utilizador" autocomplete="username">
+    <input type="password" id="inputPin" placeholder="PIN de 4 dígitos" maxlength="4" autocomplete="current-password">
+    <button class="btn-add" style="width:100%; padding: 12px;" onclick="fazerLoginPin()">Entrar na Carteira</button>
   </div>
 </div>
 
 <!-- CABEÇALHO DO UTILIZADOR -->
 <div class="user-badge-top" id="userBadgeTop" style="display:none;">
-  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ GitHub Auth)</span></div>
+  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ Supabase PIN)</span></div>
   <div style="display:flex; gap:6px; flex-wrap:wrap;">
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="sincronizarDaNuvem()">🔄 Sincronizar</button>
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="atualizarTodasCotações()">📈 Cotações</button>
@@ -245,7 +225,7 @@
 </div>
 
 <h1>🧮 Preço Médio — Múltiplas Criptos</h1>
-<div class="sub">Gestão de carteira sincronizada na nuvem com autenticação do GitHub.</div>
+<div class="sub">Gestão de carteira sincronizada na nuvem com PIN seguro.</div>
 
 <!-- TOTAL GERAL -->
 <div class="topo-total">
@@ -301,47 +281,42 @@
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let currentUser = null;
+  let currentPin = null;
   let dados = { ativos: {} };
 
-  window.addEventListener('DOMContentLoaded', async () => {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session && session.user) {
-      processarSessao(session.user);
+  window.addEventListener('DOMContentLoaded', () => {
+    const salvoUser = localStorage.getItem('calc_cripto_usuario');
+    const salvoPin = localStorage.getItem('calc_cripto_pin');
+    if (salvoUser && salvoPin) {
+      document.getElementById('inputUsuario').value = salvoUser;
+      document.getElementById('inputPin').value = salvoPin;
+      fazerLoginPin();
     }
-
-    supabaseClient.auth.onAuthStateChange(async (event, session) => {
-      if (session && session.user) {
-        processarSessao(session.user);
-      }
-    });
   });
 
-  async function loginComGithub() {
-    const { error } = await supabaseClient.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: window.location.origin + window.location.pathname
-      }
-    });
-    if (error) {
-      alert('Erro ao autenticar com o GitHub: ' + error.message);
-    }
-  }
+  async function fazerLoginPin() {
+    const usuario = document.getElementById('inputUsuario').value.trim().toLowerCase();
+    const pin = document.getElementById('inputPin').value.trim();
 
-  async function processarSessao(user) {
-    currentUser = user;
-    const nomeExibicao = user.user_metadata?.user_name || user.email || 'Utilizador';
-    
-    document.getElementById('authOverlay').style.display = 'none';
-    document.getElementById('userBadgeTop').style.display = 'flex';
-    document.getElementById('spanUsuarioLogado').textContent = nomeExibicao;
+    if (!usuario || !pin || pin.length !== 4) {
+      alert('Por favor, insira o seu nome de utilizador e um PIN válido de 4 dígitos.');
+      return;
+    }
+
+    currentUser = usuario;
+    currentPin = pin;
+
+    localStorage.setItem('calc_cripto_usuario', usuario);
+    localStorage.setItem('calc_cripto_pin', pin);
 
     await sincronizarDaNuvem();
   }
 
   async function terminarSessao() {
-    await supabaseClient.auth.signOut();
+    localStorage.removeItem('calc_cripto_usuario');
+    localStorage.removeItem('calc_cripto_pin');
     currentUser = null;
+    currentPin = null;
     document.getElementById('authOverlay').style.display = 'flex';
     document.getElementById('userBadgeTop').style.display = 'none';
   }
@@ -350,37 +325,50 @@
     if (!currentUser) return;
     try {
       const { data, error } = await supabaseClient
-        .from('carteiras_cripto_oauth')
-        .select('dados')
-        .eq('user_id', currentUser.id)
+        .from('carteiras_cripto')
+        .select('*')
+        .eq('usuario', currentUser)
         .single();
 
-      if (data && data.dados) {
-        dados = data.dados;
+      if (data) {
+        if (data.pin !== currentPin) {
+          alert('PIN incorreto para este utilizador.');
+          terminarSessao();
+          return;
+        }
+        dados = data.dados || { ativos: {} };
       } else {
+        // Registo novo, cria na base de dados
         dados = { ativos: {} };
         await salvarNaNuvem();
       }
+
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('userBadgeTop').style.display = 'flex';
+      document.getElementById('spanUsuarioLogado').textContent = currentUser;
       render();
     } catch (e) {
-      console.warn('Criando registo inicial para o novo utilizador...');
-      dados = { ativos: {} };
+      console.error('Erro ao sincronizar:', e);
+      // Se a tabela não tiver registo ainda
       await salvarNaNuvem();
+      document.getElementById('authOverlay').style.display = 'none';
+      document.getElementById('userBadgeTop').style.display = 'flex';
+      document.getElementById('spanUsuarioLogado').textContent = currentUser;
       render();
     }
   }
 
   async function salvarNaNuvem() {
-    if (!currentUser) return;
+    if (!currentUser || !currentPin) return;
     try {
       const { error } = await supabaseClient
-        .from('carteiras_cripto_oauth')
+        .from('carteiras_cripto')
         .upsert({
-          user_id: currentUser.id,
-          email: currentUser.email || '',
+          usuario: currentUser,
+          pin: currentPin,
           dados: dados,
           atualizado_em: new Date().toISOString()
-        }, { onConflict: 'user_id' });
+        }, { onConflict: 'usuario' });
 
       if (error) console.error('Erro ao salvar na nuvem:', error);
     } catch (e) {
@@ -615,6 +603,7 @@
   ['valor', 'preco'].forEach(id => {
     document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') adicionar(); });
   });
+  document.getElementById('inputPin').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLoginPin(); });
   document.getElementById('novoAtivo').addEventListener('keydown', e => { if (e.key === 'Enter') criarAtivo(); });
   document.getElementById('novoAtivo').addEventListener('input', e => {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
