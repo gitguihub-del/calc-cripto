@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+code_pin_con_features = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora de Preço Médio - Múltiplas Criptos (PIN Supabase)</title>
+<title>Calculadora de Preço Médio - Múltiplas Criptos (PIN Supabase + Backup)</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
 <!-- Supabase JS Client CDN -->
@@ -216,16 +216,19 @@
 
 <!-- CABEÇALHO DO UTILIZADOR -->
 <div class="user-badge-top" id="userBadgeTop" style="display:none;">
-  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ Supabase PIN)</span></div>
+  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ PIN Nuvem)</span></div>
   <div style="display:flex; gap:6px; flex-wrap:wrap;">
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="sincronizarDaNuvem()">🔄 Sincronizar</button>
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#0ea5e9; color:#fff;" onclick="atualizarTodasCotações()">📈 Cotações</button>
+    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#10b981; color:#fff;" onclick="exportarBackup()">📤 Exportar</button>
+    <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px; background:#f59e0b; color:#fff;" onclick="document.getElementById('fileInput').click()">📥 Importar</button>
+    <input type="file" id="fileInput" style="display:none" accept=".json" onchange="importarBackup(event)">
     <button class="btn-clear" style="margin:0; padding:4px 8px; font-size:11px;" onclick="terminarSessao()">Sair</button>
   </div>
 </div>
 
 <h1>🧮 Preço Médio — Múltiplas Criptos</h1>
-<div class="sub">Gestão de carteira sincronizada na nuvem com PIN seguro.</div>
+<div class="sub">Gestão de carteira sincronizada na nuvem com PIN seguro e ferramentas de backup.</div>
 
 <!-- TOTAL GERAL -->
 <div class="topo-total">
@@ -338,7 +341,6 @@
         }
         dados = data.dados || { ativos: {} };
       } else {
-        // Registo novo, cria na base de dados
         dados = { ativos: {} };
         await salvarNaNuvem();
       }
@@ -349,7 +351,6 @@
       render();
     } catch (e) {
       console.error('Erro ao sincronizar:', e);
-      // Se a tabela não tiver registo ainda
       await salvarNaNuvem();
       document.getElementById('authOverlay').style.display = 'none';
       document.getElementById('userBadgeTop').style.display = 'flex';
@@ -374,6 +375,40 @@
     } catch (e) {
       console.error('Erro de rede:', e);
     }
+  }
+
+  // Funcionalidades de Exportar e Importar Backup
+  function exportarBackup() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dados, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `backup_carteira_${currentUser}_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function importarBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (parsed && parsed.ativos) {
+          dados = parsed;
+          await salvarNaNuvem();
+          render();
+          alert('Backup importado e sincronizado com sucesso na nuvem!');
+        } else {
+          alert('O ficheiro JSON não tem um formato válido de carteira.');
+        }
+      } catch (err) {
+        alert('Erro ao ler o ficheiro JSON.');
+      }
+      event.target.value = '';
+    };
+    reader.readAsText(file);
   }
 
   function criarAtivo() {
