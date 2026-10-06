@@ -302,7 +302,7 @@
   let currentUser = null;
   let currentPin = null;
   let dados = { ativos: {} };
-  let carregandoNuvem = false; // Trava de segurança para evitar apagar dados ao sincronizar
+  let carregandoNuvem = false;
 
   window.addEventListener('DOMContentLoaded', () => {
     const salvoUser = localStorage.getItem('calc_cripto_usuario');
@@ -361,7 +361,6 @@
         if (data.dados && data.dados.ativos && Object.keys(data.dados.ativos).length > 0) {
           dados = data.dados;
         } else {
-          // Se a nuvem estiver vazia mas tivermos dados locais, enviamos os locais para a nuvem
           if (dados && dados.ativos && Object.keys(dados.ativos).length > 0) {
             await salvarNaNuvem();
           }
