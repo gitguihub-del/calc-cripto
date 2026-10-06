@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora de Preço Médio - Múltiplas Criptos (PIN Supabase)</title>
+<title>Calculadora de Preço Médio - Múltiplas Criptos</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
 <!-- Supabase JS Client CDN -->
@@ -232,7 +232,7 @@
 
 <!-- CABEÇALHO DO UTILIZADOR -->
 <div class="user-badge-top" id="userBadgeTop" style="display:none;">
-  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ Supabase PIN)</span></div>
+  <div>Utilizador: <span id="spanUsuarioLogado"></span> <span style="color:#4ade80; font-size:11px;">(☁️ PIN Nuvem)</span></div>
   <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
     <button class="btn-acao btn-sinc" onclick="sincronizarDaNuvem()">🔄 Sincronizar</button>
     <button class="btn-acao btn-cot" onclick="atualizarTodasCotações()">📈 Cotações</button>
@@ -302,6 +302,7 @@
   let currentUser = null;
   let currentPin = null;
   let dados = { ativos: {} };
+  let carregandoNuvem = false; // Trava de segurança para evitar apagar dados ao sincronizar
 
   window.addEventListener('DOMContentLoaded', () => {
     const salvoUser = localStorage.getItem('calc_cripto_usuario');
@@ -342,6 +343,7 @@
 
   async function sincronizarDaNuvem() {
     if (!currentUser) return;
+    carregandoNuvem = true;
     try {
       const { data, error } = await supabaseClient
         .from('carteiras_cripto')
@@ -353,11 +355,18 @@
         if (data.pin !== currentPin) {
           alert('PIN incorreto para este utilizador.');
           terminarSessao();
+          carregandoNuvem = false;
           return;
         }
-        dados = data.dados || { ativos: {} };
+        if (data.dados && data.dados.ativos && Object.keys(data.dados.ativos).length > 0) {
+          dados = data.dados;
+        } else {
+          // Se a nuvem estiver vazia mas tivermos dados locais, enviamos os locais para a nuvem
+          if (dados && dados.ativos && Object.keys(dados.ativos).length > 0) {
+            await salvarNaNuvem();
+          }
+        }
       } else {
-        dados = { ativos: {} };
         await salvarNaNuvem();
       }
 
@@ -365,18 +374,17 @@
       document.getElementById('userBadgeTop').style.display = 'flex';
       document.getElementById('spanUsuarioLogado').textContent = currentUser;
       render();
+      alert('Sincronização concluída com sucesso!');
     } catch (e) {
       console.error('Erro ao sincronizar:', e);
-      await salvarNaNuvem();
-      document.getElementById('authOverlay').style.display = 'none';
-      document.getElementById('userBadgeTop').style.display = 'flex';
-      document.getElementById('spanUsuarioLogado').textContent = currentUser;
+      alert('Erro ao conectar com a nuvem. A usar dados locais.');
       render();
     }
+    carregandoNuvem = false;
   }
 
   async function salvarNaNuvem() {
-    if (!currentUser || !currentPin) return;
+    if (!currentUser || !currentPin || carregandoNuvem) return;
     try {
       const { error } = await supabaseClient
         .from('carteiras_cripto')
@@ -415,15 +423,16 @@
     reader.onload = async function(e) {
       try {
         const parsed = JSON.parse(e.target.result);
-        // Suporta tanto o formato { versao, dados: { ativos } } quanto { ativos } direto
+        
         if (parsed && parsed.dados && parsed.dados.ativos) {
           dados = parsed.dados;
         } else if (parsed && parsed.ativos) {
           dados = parsed;
         } else {
-          alert('O ficheiro JSON não tem um formato válido de carteira.');
+          alert('O ficheiro JSON não contém ativos válidos.');
           return;
         }
+
         await salvarNaNuvem();
         render();
         alert('Backup importado e sincronizado com sucesso na nuvem!');
@@ -505,7 +514,7 @@
       'ADA': 'cardano', 'DOGE': 'dogecoin', 'XRP': 'ripple',
       'DOT': 'polkadot', 'MATIC': 'polygon', 'LINK': 'chainlink',
       'UNI': 'uniswap', 'LTC': 'litecoin', 'AVAX': 'avalanche-2',
-      'SHIB': 'shiba-inu', 'BNB': 'binancecoin'
+      'SHIB': 'shiba-inu', 'BNB': 'binancecoin', 'NEAR': 'near'
     };
 
     let idsParaBuscar = [];
@@ -533,7 +542,7 @@
 
       salvarNaNuvem();
       render();
-      alert(`Sucesso! Cotações de ${atualizados} ativo(s) updated e sincronizadas na nuvem.`);
+      alert(`Sucesso! Cotações de ${atualizados} ativo(s) atualizadas e sincronizadas na nuvem.`);
     } catch (e) {
       alert('Erro ao conectar com a API de cotações.');
     }
@@ -665,7 +674,7 @@
   document.getElementById('inputPin').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLoginPin(); });
   document.getElementById('novoAtivo').addEventListener('keydown', e => { if (e.key === 'Enter') criarAtivo(); });
   document.getElementById('novoAtivo').addEventListener('input', e => {
-    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '', '');
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   });
 </script>
 </body>
